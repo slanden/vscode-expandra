@@ -1,0 +1,24 @@
+{
+  "name": "expandra",
+  "displayName": "Expandra",
+  "description": "Nestable markup written compactly",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.78.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": ["onLanguage"],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [{
+      "command": "expandra.expand",
+      "title": "Expandra: Expand"
+    }]
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.78.0",
+    "@types/node": "16.x"
+  }
+}

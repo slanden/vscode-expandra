@@ -1,0 +1,6 @@
+**/*.map
+.gitignore
+.vscode/**
+node_modules
+examples
+CHANGELOG.md
