@@ -1,5 +1,12 @@
 const vscode = require("vscode");
 
+/** Configures Expandra for a specific language
+ * @typedef LanguageConfig
+ * @property {string} template - Describes the format of
+ * the generated code
+ */
+
+
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -46,6 +53,14 @@ function expand() {
  * @param {vscode.Position} position
  */
 function provideCompletionItems(document, position) {
+  let lang = vscode.workspace
+    .getConfiguration("expandra")
+    .get("languages")
+    .find((x) => x.lang === document.languageId)?.config ||
+    LANGUAGES[document.languageId];
+  // If the document language isn't a {user/pre}-
+  // configured language, don't do anything
+  if (!lang) return;
 
   let line = document.lineAt(position.line);
   let line_range = word_range(line, position.character);
@@ -97,6 +112,16 @@ function word_range(line, index) {
   }
   return { start, end };
 }
+
+/** Default `LanguageConfig`s */
+const LANGUAGES = {
+  html: {
+    template: "<{name}>{body}</{name}>",
+  },
+  pdml: {
+    template: "[{name} {body}]",
+  },
+};
 
 module.exports = {
   activate,

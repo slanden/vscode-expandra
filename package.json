@@ -15,7 +15,39 @@
     "commands": [{
       "command": "expandra.expand",
       "title": "Expandra: Expand"
-    }]
+    }],
+    "configuration": {
+      "title": "Expandra",
+      "properties": {
+        "expandra.languages": {
+          "markdownDescription": "Pre-configured languages:\n- HTML\n- PDML\n- XML\n\nYou can add custom languages below.",
+          "type": "array",
+          "items": {
+            "type":"object",
+            "properties": {
+              "lang": {
+                "type": "string",
+                "description": "A language ID, e.g. 'html'"
+              },
+              "config": {
+                "type": "object",
+                "properties": {
+                  "template": {
+                    "type": "string",
+                    "description": "A template the expanded code should follow."
+                  },
+                  "attributeSeparator": {
+                    "type": "string",
+                    "description": "A string to separate attributes, if the template has an attributes section.",
+                    "default": " "
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   },
   "devDependencies": {
     "@types/vscode": "^1.78.0",
