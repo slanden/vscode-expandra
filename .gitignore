@@ -1,3 +1,4 @@
 *.map
+core
 dist
 node_modules
