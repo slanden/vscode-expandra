@@ -70,11 +70,19 @@ function expand(lang, range) {
  * @param {vscode.Position} position
  */
 function provideCompletionItems(document, position) {
+  // This won't work if a user associated other file
+  // extension with a specific language
+  // let lang_id = document.fileName.lastIndexOf(".");
+  // lang_id = lang_id != -1
+  //   ? document.fileName.substring(lang_id + 1)
+  //   : document.languageId;
+
   let lang = vscode.workspace
     .getConfiguration("expandra")
     .get("languages")
-    .find((x) => x.lang === document.languageId)?.config ||
-    LANGUAGES[document.languageId];
+    ?.find((x) => x.lang === document.languageId)
+    ?.config
+    || LANGUAGES[document.languageId];
   // If the document language isn't a {user/pre}-
   // configured language, don't do anything
   if (!lang) return;
@@ -139,7 +147,7 @@ const LANGUAGES = {
     template: "<{name}>{body}</{name}>",
   },
   pdml: {
-    template: "[{name} {body}]",
+    template: "[{name}{' (' attributes ')'}{body}]",
   },
 };
 
