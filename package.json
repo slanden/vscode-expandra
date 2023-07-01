@@ -2,12 +2,23 @@
   "name": "expandra",
   "displayName": "Expandra",
   "description": "Nestable markup written compactly",
+  "publisher": "shelby-landen",
   "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/slanden/vscode-expandra.git"
+  },
   "engines": {
     "vscode": "^1.78.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Snippets"
+  ],
+  "keywords": [
+    "emmet",
+    "snippet",
+    "pdml"
   ],
   "activationEvents": ["onLanguage"],
   "main": "./src/extension.js",
