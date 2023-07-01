@@ -10,12 +10,38 @@
     "Other"
   ],
   "activationEvents": ["onLanguage"],
-  "main": "./extension.js",
+  "main": "./src/extension.js",
   "contributes": {
     "commands": [{
       "command": "expandra.expand",
       "title": "Expandra: Expand"
-    }]
+    }],
+    "configuration": {
+      "title": "Expandra",
+      "properties": {
+        "expandra.languages": {
+          "markdownDescription": "If a supported language has settings, you can configure them here.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "disable": {
+                "type": "boolean",
+                "description": "Disable expansion for this language"
+              },
+              "lang": {
+                "type": "string",
+                "description": "A language ID, e.g. 'pdml'"
+              },
+              "settings": {
+                "type": "object",
+                "description": "Settings for this language that others may not have"
+              }
+            }
+          }
+        }
+      }
+    }
   },
   "scripts": {
     "build-core": "wasm-pack build ../expandra --out-dir ../vscode-expandra/core --target nodejs --no-pack -- --config opt-level=\"'s'\" && rm core/.gitignore"

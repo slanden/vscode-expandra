@@ -1,5 +1,10 @@
 const vscode = require("vscode");
-const core = require("./core/expandra");
+const core = require("../core/expandra");
+const {
+  initDocSelectors,
+  word_range,
+  LANGUAGES,
+} = require("./lib.js");
 
 /** Configures Expandra for a specific language
  * @typedef LanguageConfig
@@ -19,7 +24,7 @@ const UTF8 = (() => {
     encode: enc.encode.bind(enc),
   };
 })();
-
+let completionSubscriptionIndex;
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -29,14 +34,49 @@ function activate(context) {
       "expandra.expand",
       expand,
     ),
-    vscode.languages.registerCompletionItemProvider(
-      { scheme: "file" },
-      { provideCompletionItems },
-      ">",
-      "+",
-      "*",
-    ),
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("expandra.languages")) {
+        let docSelectors = initDocSelectors();
+        if (completionSubscriptionIndex !== undefined) {
+          context.subscriptions[completionSubscriptionIndex]
+            .dispose();
+          if (docSelectors.length) {
+            context.subscriptions[completionSubscriptionIndex] = vscode
+              .languages.registerCompletionItemProvider(
+                docSelectors,
+                { provideCompletionItems },
+                ">",
+                "+",
+                "*",
+              );
+          }
+        } else if (docSelectors.length) {
+          context.subscriptions.push(
+            vscode.languages.registerCompletionItemProvider(
+              docSelectors,
+              { provideCompletionItems },
+              ">",
+              "+",
+              "*",
+            ),
+          );
+        }
+      }
+    }),
   );
+  let docSelectors = initDocSelectors();
+  if (docSelectors.length) {
+    completionSubscriptionIndex = context.subscriptions.length;
+    context.subscriptions.push(
+      vscode.languages.registerCompletionItemProvider(
+        docSelectors,
+        { provideCompletionItems },
+        ">",
+        "+",
+        "*",
+      ),
+    );
+  }
 }
 
 function deactivate() {}
@@ -81,8 +121,8 @@ function provideCompletionItems(document, position) {
     .getConfiguration("expandra")
     .get("languages")
     ?.find((x) => x.lang === document.languageId)
-    ?.config
-    || LANGUAGES[document.languageId];
+    ?.config ||
+    LANGUAGES[document.languageId];
   // If the document language isn't a {user/pre}-
   // configured language, don't do anything
   if (!lang) return;
@@ -108,48 +148,6 @@ function provideCompletionItems(document, position) {
   // Setting `true` fixes the "UI refresh flash"
   return new vscode.CompletionList([completion], true);
 }
-
-
-/** Starting at an `index` in a `line`, expand outward in both directions
- * until a space is found or there are no more characters.
- * @param {number} line
- * @param {number} index
- */
-function word_range(line, index) {
-  let i = index;
-  let start = index;
-  let end = line.range.end.character;
-  while (true) {
-    if (line.text.charAt(i) === " " || line.text.charAt(i) === "\t") {
-      i += 1;
-      break;
-    }
-    if (i == 0) {
-      break;
-    }
-    i--;
-  }
-  start = i;
-  i = index;
-  while (i < line.range.end.character) {
-    if (line.text.charAt(i) === " " || line.text.charAt(i) === "\t") {
-      end = i;
-      break;
-    }
-    i++;
-  }
-  return { start, end };
-}
-
-/** Default `LanguageConfig`s */
-const LANGUAGES = {
-  html: {
-    template: "<{name}>{body}</{name}>",
-  },
-  pdml: {
-    template: "[{name}{' (' attributes ')'}{body}]",
-  },
-};
 
 module.exports = {
   activate,
