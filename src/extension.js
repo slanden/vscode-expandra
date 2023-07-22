@@ -1,8 +1,8 @@
 const vscode = require("vscode");
 const core = require("../core/expandra");
 const {
+  expansion_range,
   initDocSelectors,
-  word_range,
   LANGUAGES,
 } = require("./lib.js");
 
@@ -128,7 +128,7 @@ function provideCompletionItems(document, position) {
   if (!lang) return;
 
   let line = document.lineAt(position.line);
-  let line_range = word_range(line, position.character);
+  let line_range = expansion_range(line, position.character);
   // TODO: Fix digits not triggering completion
   let completion = new vscode.CompletionItem(
     line.text.substring(line_range.start, line_range.end),

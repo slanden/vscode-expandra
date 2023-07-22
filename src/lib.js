@@ -85,7 +85,50 @@ function word_range(line, index) {
   return { start, end };
 }
 
+/** Starting at an `index` in a `line`, expand outward in both
+ * directions until a space is found that is not inside a `{}`
+ * pair, or there are no more characters.
+ * @param {number} line
+ * @param {number} index
+ */
+function expansion_range(line, index) {
+  let i = index;
+  let start = index;
+  let end = line.range.end.character;
+  // The char after a space when moving left, or before it when moving right
+  let boundary = null;
+  while (true) {
+    if (
+      !boundary && (line.text.charAt(i) === " " || line.text.charAt(i) === "\t")
+    ) {
+      boundary = i + 1;
+    } else if (line.text.charAt(i) === "{") {
+      boundary = null;
+    }
+    if (i == 0) {
+      break;
+    }
+    i--;
+  }
+  start = boundary || i;
+  i = index;
+  boundary = null;
+  while (i < line.range.end.character) {
+    if (
+      !boundary && (line.text.charAt(i) === " " || line.text.charAt(i) === "\t")
+    ) {
+      boundary = i;
+    } else if (line.text.charAt(i) === "}") {
+      boundary = null;
+    }
+    i++;
+  }
+  end = boundary || i;
+  return { start, end };
+}
+
 module.exports = {
+  expansion_range,
   initDocSelectors,
   pdml_template,
   word_range,
