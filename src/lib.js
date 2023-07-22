@@ -2,6 +2,28 @@ const vscode = require("vscode");
 
 /** Default `LanguageConfig`s */
 const LANGUAGES = {
+  json: {
+    groupsAreCode: true,
+    template: `{
+        _ if text | _ indent
+      }{
+        _ if group | _ '\"'
+      }{
+          name
+      }{
+        _ if group | _ '\": '
+      }{
+        '['+node_separator body indent+']' if child_repeats
+        | '\"' body '\"' if child_is_text
+        | body if text
+        | body '$'+counter if empty
+        | '{'+node_separator body indent+'}'
+      }{
+        _ if last_child | _ ','
+      }{
+        _ if text | _ node_separator
+      }`,
+  },
   pdml: {
     template: pdml_template(),
   },
@@ -49,9 +71,13 @@ function initDocSelectors() {
  * alternative attribute syntax in the template
  */
 function pdml_template(altAttributeSyntax = false) {
-  return altAttributeSyntax
-    ? "[{name}{' (' attributes ')'}{body}]"
-    : "[{name}{' [@ ' attributes ']'}{body}]";
+  return `{_ indent}[{name}{` + (
+    altAttributeSyntax ? "'(' attributes ')'" : "'[@ ' attributes ']'"
+  ) +
+    `}{
+        body '$'+counter if empty
+        | node_separator body indent
+      }]{_ node_separator}`;
 }
 
 /** Starting at an `index` in a `line`, expand outward in both directions

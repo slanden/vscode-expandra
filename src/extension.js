@@ -8,6 +8,9 @@ const {
 
 /** Configures Expandra for a specific language
  * @typedef LanguageConfig
+ * @property {boolean} groupsAreCode - Whether the groups
+ * from the expansion string can be part of the template,
+ * i.e. have {pre,suf}fixes, add indententation, etc.
  * @property {string} template - Describes the format of
  * the generated code
  */
@@ -94,9 +97,10 @@ function expand(lang, range) {
   let res = UTF8.decode(core.wasm_expand(
     UTF8.encode(editor.document.getText(range)),
     UTF8.encode(lang.template),
+    lang.groupsAreCode || false,
   ));
   editor.insertSnippet(
-    new vscode.SnippetString(res /* `Put snippet here $1` */),
+    new vscode.SnippetString(res),
     range,
   );
 }
