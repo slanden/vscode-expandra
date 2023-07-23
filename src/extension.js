@@ -39,7 +39,11 @@ function activate(context) {
     ),
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("expandra.languages")) {
-        let docSelectors = initDocSelectors();
+        let docSelectors = initDocSelectors(
+          vscode.workspace
+            .getConfiguration("expandra")
+            .get("languages"),
+        );
         if (completionSubscriptionIndex !== undefined) {
           context.subscriptions[completionSubscriptionIndex]
             .dispose();
@@ -67,7 +71,11 @@ function activate(context) {
       }
     }),
   );
-  let docSelectors = initDocSelectors();
+  let docSelectors = initDocSelectors(
+    vscode.workspace
+      .getConfiguration("expandra")
+      .get("languages"),
+  );
   if (docSelectors.length) {
     completionSubscriptionIndex = context.subscriptions.length;
     context.subscriptions.push(
@@ -132,7 +140,10 @@ function provideCompletionItems(document, position) {
   if (!lang) return;
 
   let line = document.lineAt(position.line);
-  let line_range = expansion_range(line, position.character);
+  let line_range = expansion_range(
+    line.text,
+    position.character,
+  );
   // TODO: Fix digits not triggering completion
   let completion = new vscode.CompletionItem(
     line.text.substring(line_range.start, line_range.end),
@@ -143,7 +154,7 @@ function provideCompletionItems(document, position) {
     position.line,
     line_range.end,
   );
-  completion.documentation = "Converts the string to source code";
+  completion.documentation = "Expandra: Converts the string to source code";
   // Trigger a command to lazily calculate the result
   completion.command = {
     command: "expandra.expand",

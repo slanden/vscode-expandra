@@ -1,6 +1,12 @@
+**/*.d.ts
 **/*.map
+**/tsconfig.json
+**/*.test.*
 .gitignore
 .vscode/**
-node_modules
+core/expandra.js
 examples
+node_modules
+src
+# Gets bundled
 CHANGELOG.md

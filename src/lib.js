@@ -1,33 +1,68 @@
-const vscode = require("vscode");
-
 /** Default `LanguageConfig`s */
 const LANGUAGES = {
   json: {
     groupsAreCode: true,
-    template: `{
-        _ if text | _ indent
-      }{
-        _ if group | _ '\"'
-      }{
-          name
-      }{
-        _ if group | _ '\": '
-      }{
-        '['+node_separator body indent+']' if child_repeats
-        | '\"' body '\"' if child_is_text
-        | body if text
-        | body '$'+counter if empty
-        | '{'+node_separator body indent+'}'
-      }{
-        _ if last_child | _ ','
-      }{
-        _ if text | _ node_separator
-      }`,
+    template:
+      `{_ if text|_ indent}{_ if group|_ '\"'}{name}{_ if group|_ '\": '}{'['+node_separator body indent+']' if child_repeats|'\"' body '\"' if child_is_text|body if text|body '$'+counter if empty|'{'+node_separator body indent+'}'}{_ if last_child|_ ','}{_ if text|_ node_separator}`,
   },
   pdml: {
     template: pdml_template(),
   },
+  pml: {
+    template: pdml_template(),
+  },
 };
+
+/** Starting at an `index` in a `source`, find the left boundary
+ * and move the right boundary outward if necessary to close an
+ * open pair of `{}` or `[]`, or until there are no more characters
+ * @param {string} source
+ * @param {number} index
+ */
+function expansion_range(source, index) {
+  let i = index;
+  let start = index;
+  let boundary = null;
+  let looking_for = [];
+
+  while (i > 0) {
+    i--;
+    if (
+      !boundary && (source.charAt(i) === " " || source.charAt(i) === "\t")
+    ) {
+      boundary = i + 1;
+    } else if (source.charAt(i) === "}") {
+      boundary = null;
+      looking_for.push("{");
+    } else if (source.charAt(i) === "]") {
+      boundary = null;
+      looking_for.push("[");
+    } else if (source.charAt(i) === "{") {
+      boundary = null;
+      if (looking_for.length && looking_for[looking_for.length - 1] === "{") {
+        looking_for.pop();
+      } else {
+        looking_for.push("}");
+      }
+    } else if (source.charAt(i) === "[") {
+      boundary = null;
+      if (looking_for.length && [looking_for.length - 1] === "[") {
+        looking_for.pop();
+      } else {
+        looking_for.push("]");
+      }
+    }
+  }
+  start = boundary || i;
+  i = index;
+  while (looking_for.length && i < source.length) {
+    if (source.charAt(i) === looking_for[0]) {
+      looking_for.shift();
+    }
+    i++;
+  }
+  return { start, end: i };
+}
 
 /** Get a list of `DocumentSelector`s for supported and
  * enabled languages.
@@ -37,10 +72,7 @@ const LANGUAGES = {
  * activation, the PDML template is also set here to
  * avoid searching again.
  */
-function initDocSelectors() {
-  let langs = vscode.workspace
-    .getConfiguration("expandra")
-    .get("languages");
+function initDocSelectors(langs) {
   let docSelectors = [];
   let visited = new Map();
   for (let i = 0; i < langs.length; ++i) {
@@ -53,8 +85,8 @@ function initDocSelectors() {
       language: langs[i].lang,
     });
 
-    if (langs[i].lang === "pdml") {
-      LANGUAGES.pdml.template = pdml_template(
+    if (langs[i].lang === "pdml" || langs[i].lang === "pml") {
+      LANGUAGES[langs[i].lang].template = pdml_template(
         langs[i].settings?.alternativeAttributeSyntax,
       );
     }
@@ -74,89 +106,12 @@ function pdml_template(altAttributeSyntax = false) {
   return `{_ indent}[{name}{` + (
     altAttributeSyntax ? "'(' attributes ')'" : "'[@ ' attributes ']'"
   ) +
-    `}{
-        body '$'+counter if empty
-        | node_separator body indent
-      }]{_ node_separator}`;
-}
-
-/** Starting at an `index` in a `line`, expand outward in both directions
- * until a space is found or there are no more characters.
- * @param {number} line
- * @param {number} index
- */
-function word_range(line, index) {
-  let i = index;
-  let start = index;
-  let end = line.range.end.character;
-  while (true) {
-    if (line.text.charAt(i) === " " || line.text.charAt(i) === "\t") {
-      i += 1;
-      break;
-    }
-    if (i == 0) {
-      break;
-    }
-    i--;
-  }
-  start = i;
-  i = index;
-  while (i < line.range.end.character) {
-    if (line.text.charAt(i) === " " || line.text.charAt(i) === "\t") {
-      end = i;
-      break;
-    }
-    i++;
-  }
-  return { start, end };
-}
-
-/** Starting at an `index` in a `line`, expand outward in both
- * directions until a space is found that is not inside a `{}`
- * pair, or there are no more characters.
- * @param {number} line
- * @param {number} index
- */
-function expansion_range(line, index) {
-  let i = index;
-  let start = index;
-  let end = line.range.end.character;
-  // The char after a space when moving left, or before it when moving right
-  let boundary = null;
-  while (true) {
-    if (
-      !boundary && (line.text.charAt(i) === " " || line.text.charAt(i) === "\t")
-    ) {
-      boundary = i + 1;
-    } else if (line.text.charAt(i) === "{") {
-      boundary = null;
-    }
-    if (i == 0) {
-      break;
-    }
-    i--;
-  }
-  start = boundary || i;
-  i = index;
-  boundary = null;
-  while (i < line.range.end.character) {
-    if (
-      !boundary && (line.text.charAt(i) === " " || line.text.charAt(i) === "\t")
-    ) {
-      boundary = i;
-    } else if (line.text.charAt(i) === "}") {
-      boundary = null;
-    }
-    i++;
-  }
-  end = boundary || i;
-  return { start, end };
+    `}{body '$'+counter if empty|node_separator body indent}]{_ node_separator}`;
 }
 
 module.exports = {
   expansion_range,
   initDocSelectors,
   pdml_template,
-  word_range,
   LANGUAGES,
 };

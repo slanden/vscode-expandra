@@ -20,13 +20,19 @@
     "snippet",
     "pdml"
   ],
-  "activationEvents": ["onLanguage"],
-  "main": "./src/extension.js",
+  "activationEvents": [
+    "onLanguage:pdml",
+    "onLanguage:pml",
+    "onLanguage:json"
+  ],
+  "main": "./dist/extension",
   "contributes": {
-    "commands": [{
-      "command": "expandra.expand",
-      "title": "Expandra: Expand"
-    }],
+    "commands": [
+      {
+        "command": "expandra.expand",
+        "title": "Expandra: Expand"
+      }
+    ],
     "configuration": {
       "title": "Expandra",
       "properties": {
@@ -55,10 +61,15 @@
     }
   },
   "scripts": {
-    "build-core": "wasm-pack build ../expandra --out-dir ../vscode-expandra/core --target nodejs --no-pack -- --config opt-level=\"'s'\" && rm core/.gitignore"
+    "build-core": "wasm-pack build ../expandra --out-dir ../vscode-expandra/core --target nodejs --no-pack -- --config opt-level=\"'s'\" && rm core/.gitignore",
+    "esbuild-base": "esbuild ./src/extension.js --bundle --outdir=dist --entry-names=[name] --external:vscode --platform=node --target=node16.10",
+    "test": "node src/lib.test.js",
+    "vscode:prepublish": "npm run esbuild-base -- --minify"
   },
   "devDependencies": {
+    "@types/node": "16.x",
     "@types/vscode": "^1.78.0",
-    "@types/node": "16.x"
+    "baretest": "^2.0.0",
+    "esbuild": "^0.18.15"
   }
 }
