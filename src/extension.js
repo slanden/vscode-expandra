@@ -27,6 +27,7 @@ const UTF8 = (() => {
     encode: enc.encode.bind(enc),
   };
 })();
+let active_config;
 let completionSubscriptionIndex;
 /**
  * @param {vscode.ExtensionContext} context
@@ -37,6 +38,14 @@ function activate(context) {
       "expandra.expand",
       expand,
     ),
+    vscode.window.onDidChangeActiveTextEditor((e) => {
+      active_config = vscode.workspace
+        .getConfiguration("expandra")
+        .get("languages")
+        ?.find((x) => x.lang === e.document.languageId)
+        ?.config ||
+        LANGUAGES[e.document.languageId];
+    }),
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("expandra.languages")) {
         let docSelectors = initDocSelectors(
@@ -71,6 +80,13 @@ function activate(context) {
       }
     }),
   );
+  active_config = vscode.workspace
+    .getConfiguration("expandra")
+    .get("languages")
+    ?.find((x) => x.lang === vscode.window.activeTextEditor.document.languageId)
+    ?.config ||
+    LANGUAGES[vscode.window.activeTextEditor.document.languageId];
+
   let docSelectors = initDocSelectors(
     vscode.workspace
       .getConfiguration("expandra")
@@ -98,18 +114,22 @@ function deactivate() {}
  * @param {LanguageConfig} lang
  * @param {vscode.Range} range
  */
-function expand(lang, range) {
+function expand(range) {
   let editor = vscode.window.activeTextEditor;
   if (!editor) return;
 
+  let rng = range || new vscode.Range(
+    vscode.window.activeTextEditor.selection.start,
+    vscode.window.activeTextEditor.selection.end,
+  );
   let res = UTF8.decode(core.wasm_expand(
-    UTF8.encode(editor.document.getText(range)),
-    UTF8.encode(lang.template),
-    lang.groupsAreCode || false,
+    UTF8.encode(editor.document.getText(rng)),
+    UTF8.encode(active_config.template),
+    active_config.groupsAreCode || false,
   ));
   editor.insertSnippet(
     new vscode.SnippetString(res),
-    range,
+    rng,
   );
 }
 
@@ -122,22 +142,7 @@ function expand(lang, range) {
  * @param {vscode.Position} position
  */
 function provideCompletionItems(document, position) {
-  // This won't work if a user associated other file
-  // extension with a specific language
-  // let lang_id = document.fileName.lastIndexOf(".");
-  // lang_id = lang_id != -1
-  //   ? document.fileName.substring(lang_id + 1)
-  //   : document.languageId;
-
-  let lang = vscode.workspace
-    .getConfiguration("expandra")
-    .get("languages")
-    ?.find((x) => x.lang === document.languageId)
-    ?.config ||
-    LANGUAGES[document.languageId];
-  // If the document language isn't a {user/pre}-
-  // configured language, don't do anything
-  if (!lang) return;
+  if (!active_config) return;
 
   let line = document.lineAt(position.line);
   let line_range = expansion_range(
@@ -158,7 +163,7 @@ function provideCompletionItems(document, position) {
   // Trigger a command to lazily calculate the result
   completion.command = {
     command: "expandra.expand",
-    arguments: [lang, completion.range],
+    arguments: [completion.range],
   };
   // Setting `true` fixes the "UI refresh flash"
   return new vscode.CompletionList([completion], true);

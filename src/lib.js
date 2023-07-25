@@ -46,7 +46,7 @@ function expansion_range(source, index) {
       }
     } else if (source.charAt(i) === "[") {
       boundary = null;
-      if (looking_for.length && [looking_for.length - 1] === "[") {
+      if (looking_for.length && looking_for[looking_for.length - 1] === "[") {
         looking_for.pop();
       } else {
         looking_for.push("]");
