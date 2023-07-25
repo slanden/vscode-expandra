@@ -2,6 +2,7 @@
   "name": "expandra",
   "displayName": "Expandra",
   "description": "Nestable markup written compactly",
+  "icon": "images/logo.png",
   "publisher": "shelby-landen",
   "version": "0.1.0",
   "repository": {
@@ -17,8 +18,8 @@
   ],
   "keywords": [
     "emmet",
-    "snippet",
-    "pdml"
+    "pdml",
+    "snippet"
   ],
   "activationEvents": [
     "onLanguage:pdml",
