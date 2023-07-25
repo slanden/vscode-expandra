@@ -39,6 +39,7 @@ function activate(context) {
       expand,
     ),
     vscode.window.onDidChangeActiveTextEditor((e) => {
+      if (!e) return;
       active_config = vscode.workspace
         .getConfiguration("expandra")
         .get("languages")
